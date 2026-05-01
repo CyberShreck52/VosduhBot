@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: dialogflow-gemini-webhook
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash-lite
