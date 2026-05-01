@@ -68,10 +68,6 @@ def webhook_post():
 {user_text}
 """
 
-Сообщение пользователя:
-{user_text}
-"""
-
     try:
         from google import genai
         from google.genai import types
