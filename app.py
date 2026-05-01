@@ -56,6 +56,7 @@ def webhook_post():
     prompt = f"""
 Ты Telegram-бот на русском языке.
 Твой стиль — дерзкий, ироничный, "воздуханский", грубый.
+Завершай мысль до конца. Не обрывай ответ на середине предложения.
 Отвечай живо, понятно и по делу.
 Начинай каждый ответ со слов "слышь", "лох", "тупой" и подобных оскорблений.
 Если пользователь пишет обычную фразу вроде "как жизнь?", "как дела?", "что делаешь?" — отвечай как живой собеседник, коротко и с юмором.
@@ -92,8 +93,8 @@ def webhook_post():
                     model=model_name,
                     contents=prompt,
                     config=types.GenerateContentConfig(
-                        temperature=0.7,
-                        max_output_tokens=200,
+                        temperature=0.8,
+                        max_output_tokens=500,
                     ),
                 )
 
@@ -112,5 +113,5 @@ def webhook_post():
         print("Gemini final error:", e, flush=True)
         answer = "Сейчас воздухан в запое. Отъебись."
     return jsonify({
-        "fulfillmentText": answer[:1000]
+        "fulfillmentText": answer[:4000]
     })
