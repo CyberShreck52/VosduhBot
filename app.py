@@ -73,22 +73,43 @@ def webhook_post():
 
         client = genai.Client(api_key=gemini_api_key)
 
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.7,
-                max_output_tokens=100,
-            ),
-        )
+        models_to_try = list(dict.fromkeys([
+            GEMINI_MODEL,
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-3.1-flash-lite-preview",
+        ]))
 
-        answer = response.text or "Не получилось нагнать воздуха."
-        print("Gemini response generated", flush=True)
+        answer = None
+        last_error = None
+
+        for model_name in models_to_try:
+            try:
+                print(f"Trying Gemini model: {model_name}", flush=True)
+
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.7,
+                        max_output_tokens=100,
+                    ),
+                )
+
+                answer = response.text or "Не получилось нагнать воздуха."
+                print(f"Gemini response generated with {model_name}", flush=True)
+                break
+
+            except Exception as model_error:
+                last_error = model_error
+                print(f"Gemini error with {model_name}: {model_error}", flush=True)
+
+        if not answer:
+            raise last_error
 
     except Exception as e:
-        print("Gemini error:", e, flush=True)
+        print("Gemini final error:", e, flush=True)
         answer = "Сейчас воздухан в запое. Отъебись."
-
     return jsonify({
         "fulfillmentText": answer[:1000]
     })
