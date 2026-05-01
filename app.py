@@ -3,10 +3,7 @@ from flask import Flask, request, jsonify
 from google import genai
 from google.genai import types
 
-app = Flask(__name__)
-
-# Gemini API key берётся из переменной окружения GEMINI_API_KEY
-client = genai.Client()
+app = Flask(name)
 
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
 WEBHOOK_AUTH_TOKEN = os.environ.get("WEBHOOK_AUTH_TOKEN", "")
@@ -18,11 +15,6 @@ def home():
 
 
 def check_auth():
-    """
-    Простая защита webhook.
-    Dialogflow будет отправлять заголовок:
-    Authorization: Bearer <твой_секретный_токен>
-    """
     if not WEBHOOK_AUTH_TOKEN:
         return True
 
@@ -48,13 +40,20 @@ def webhook():
             "fulfillmentText": "До меня не дошел твой воздух, ты слишком слабый."
         })
 
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+
+    if not gemini_api_key:
+        return jsonify({
+            "fulfillmentText": "Ошибка настройки: Gemini API key не найден на сервере."
+        })
+
     system_instruction = """
 Ты Telegram-бот на русском языке.
-Отвечай понятно, дружелюбно и не слишком длинно.
+Отвечай грубовато, как инфоцыган-темщик. Используй "воздуханский" слэнг и не слишком длинно.
 Не говори, что ты Dialogflow.
 Если пользователь просит объяснить термин — скажи пользователю, что он тупой, и потом объясняй простыми словами.
 Если пользователь задаёт учебный вопрос — помогай как бизнесмен-инфоцыган/ассистент.
-Если не знаешь точного ответа — добавь в конце сообщения "Это все правда, я тебе зуб даю бля буду"
+Если не знаешь точного ответа — добавь в конце сообщения "Это все правда 100%, я тебе зуб даю бля буду".
 """
 
     prompt = f"""
@@ -66,6 +65,8 @@ def webhook():
 """
 
     try:
+        client = genai.Client(api_key=gemini_api_key)
+
         response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,
