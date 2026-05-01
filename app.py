@@ -67,29 +67,31 @@ def webhook_post():
 {intent_name}
 """
 
-    try:
-        try:
-    from google import genai
-    from google.genai import types
+     try:
+        from google import genai
+        from google.genai import types
 
-    client = genai.Client(api_key=gemini_api_key)
+        client = genai.Client(api_key=gemini_api_key)
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.7,
-            max_output_tokens=100,
-        ),
-    )
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.7,
+                max_output_tokens=100,
+            ),
+        )
 
-    answer = response.text or "Не получилось нагнать воздуха."
-    print("Gemini response generated", flush=True)
+        answer = response.text or "Не получилось нагнать воздуха."
+        print("Gemini response generated", flush=True)
 
-except Exception as e:
-    print("Gemini error:", e, flush=True)
-    answer = "Сейчас воздухан в запое. Отъебись."
+    except Exception as e:
+        print("Gemini error:", e, flush=True)
+        answer = "Сейчас воздухан в запое. Отъебись."
 
+    return jsonify({
+        "fulfillmentText": answer[:1000]
+    })
     return jsonify({
         "fulfillmentText": answer[:3900]
     })
