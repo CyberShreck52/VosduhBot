@@ -97,7 +97,7 @@ def webhook_post():
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         temperature=0.7,
-                        max_output_tokens=100,
+                        max_output_tokens=200,
                     ),
                 )
 
