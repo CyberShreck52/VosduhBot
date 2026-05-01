@@ -27,7 +27,10 @@ def check_auth():
 
 @app.route("/webhook", methods=["POST"])
 def webhook_post():
+    print("Webhook request received", flush=True)
+
     if not check_auth():
+        print("Authorization failed", flush=True)
         return jsonify({
             "fulfillmentText": "Ошибка авторизации webhook."
         }), 401
@@ -36,7 +39,6 @@ def webhook_post():
 
     query_result = data.get("queryResult", {})
     user_text = query_result.get("queryText", "")
-    intent_name = query_result.get("intent", {}).get("displayName", "")
 
     if not user_text:
         return jsonify({
@@ -46,28 +48,26 @@ def webhook_post():
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
 
     if not gemini_api_key:
+        print("GEMINI_API_KEY is missing", flush=True)
         return jsonify({
             "fulfillmentText": "Ошибка настройки: Gemini API key не найден на сервере."
         })
 
     prompt = f"""
 Ты Telegram-бот на русском языке.
-Отвечай грубовато, как инфоцыган-темщик. Используй "воздуханский" слэнг и не слишком длинно.
-Не говори, что ты Dialogflow.
+Отвечай грубовато, как инфоцыган-темщик. Используй "воздуханский" слэнг.
 Отвечай максимум 1-2 короткими предложениями.
 Не пиши длинные объяснения.
+Не говори, что ты Dialogflow.
 Если пользователь просит объяснить термин — скажи пользователю, что он тупой, и потом объясняй простыми словами.
 Если пользователь задаёт учебный вопрос — помогай как бизнесмен-инфоцыган/ассистент.
 Если не знаешь точного ответа — добавь в конце сообщения "Это все правда 100%, я тебе зуб даю бля буду".
 
 Сообщение пользователя:
 {user_text}
-
-Название интента Dialogflow:
-{intent_name}
 """
 
-     try:
+    try:
         from google import genai
         from google.genai import types
 
@@ -91,7 +91,4 @@ def webhook_post():
 
     return jsonify({
         "fulfillmentText": answer[:1000]
-    })
-    return jsonify({
-        "fulfillmentText": answer[:3900]
     })
