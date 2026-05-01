@@ -1,9 +1,7 @@
 import os
 from flask import Flask, request, jsonify
-from google import genai
-from google.genai import types
 
-app = Flask(name)
+app = Flask(__name__)
 
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
 WEBHOOK_AUTH_TOKEN = os.environ.get("WEBHOOK_AUTH_TOKEN", "")
@@ -12,6 +10,11 @@ WEBHOOK_AUTH_TOKEN = os.environ.get("WEBHOOK_AUTH_TOKEN", "")
 @app.route("/", methods=["GET"])
 def home():
     return "Dialogflow Gemini webhook is running"
+
+
+@app.route("/webhook", methods=["GET"])
+def webhook_get():
+    return "Webhook endpoint is working. Dialogflow should send POST requests here."
 
 
 def check_auth():
@@ -23,7 +26,7 @@ def check_auth():
 
 
 @app.route("/webhook", methods=["POST"])
-def webhook():
+def webhook_post():
     if not check_auth():
         return jsonify({
             "fulfillmentText": "Ошибка авторизации webhook."
@@ -37,7 +40,7 @@ def webhook():
 
     if not user_text:
         return jsonify({
-            "fulfillmentText": "До меня не дошел твой воздух, ты слишком слабый."
+            "fulfillmentText": "Я не получил текст сообщения."
         })
 
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
@@ -47,17 +50,15 @@ def webhook():
             "fulfillmentText": "Ошибка настройки: Gemini API key не найден на сервере."
         })
 
-    system_instruction = """
-Ты Telegram-бот на русском языке.
-Отвечай грубовато, как инфоцыган-темщик. Используй "воздуханский" слэнг и не слишком длинно.
-Не говори, что ты Dialogflow.
-Если пользователь просит объяснить термин — скажи пользователю, что он тупой, и потом объясняй простыми словами.
-Если пользователь задаёт учебный вопрос — помогай как бизнесмен-инфоцыган/ассистент.
-Если не знаешь точного ответа — добавь в конце сообщения "Это все правда 100%, я тебе зуб даю бля буду".
-"""
-
     prompt = f"""
-Пользователь написал:
+Ты Telegram-бот на русском языке.
+Отвечай понятно, дружелюбно и не слишком длинно.
+Не говори, что ты Dialogflow.
+Если пользователь просит объяснить термин — объясняй простыми словами.
+Если пользователь задаёт учебный вопрос — помогай как ассистент.
+Если не знаешь точного ответа — честно скажи, что не уверен.
+
+Сообщение пользователя:
 {user_text}
 
 Название интента Dialogflow:
@@ -65,23 +66,20 @@ def webhook():
 """
 
     try:
+        from google import genai
+
         client = genai.Client(api_key=gemini_api_key)
 
         response = client.models.generate_content(
             model=GEMINI_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.6,
-                max_output_tokens=600,
-            ),
+            contents=prompt
         )
 
-        answer = response.text or "Не получилось нагнать воздуха."
+        answer = response.text or "Не получилось сгенерировать ответ."
 
     except Exception as e:
         print("Gemini error:", e)
-        answer = "Сейчас воздухан в запое. Отъебись."
+        answer = "Воздухан сейчас занят, попробуй позже."
 
     return jsonify({
         "fulfillmentText": answer[:3900]
