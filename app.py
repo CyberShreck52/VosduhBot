@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from google import genai
 from google.genai import types
 
-app = Flask(name)
+app = Flask(__name__)
 
 # Gemini API key берётся из переменной окружения GEMINI_API_KEY
 client = genai.Client()
