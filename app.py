@@ -54,6 +54,8 @@ def webhook_post():
 Ты Telegram-бот на русском языке.
 Отвечай грубовато, как инфоцыган-темщик. Используй "воздуханский" слэнг и не слишком длинно.
 Не говори, что ты Dialogflow.
+Отвечай максимум 1-2 короткими предложениями.
+Не пиши длинные объяснения.
 Если пользователь просит объяснить термин — скажи пользователю, что он тупой, и потом объясняй простыми словами.
 Если пользователь задаёт учебный вопрос — помогай как бизнесмен-инфоцыган/ассистент.
 Если не знаешь точного ответа — добавь в конце сообщения "Это все правда 100%, я тебе зуб даю бля буду".
@@ -66,20 +68,27 @@ def webhook_post():
 """
 
     try:
-        from google import genai
+        try:
+    from google import genai
+    from google.genai import types
 
-        client = genai.Client(api_key=gemini_api_key)
+    client = genai.Client(api_key=gemini_api_key)
 
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt
-        )
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.7,
+            max_output_tokens=100,
+        ),
+    )
 
-        answer = response.text or "Не получилось нагнать воздуха."
+    answer = response.text or "Не получилось нагнать воздуха."
+    print("Gemini response generated", flush=True)
 
-    except Exception as e:
-        print("Gemini error:", e)
-        answer = "Сейчас воздухан в запое. Отъебись."
+except Exception as e:
+    print("Gemini error:", e, flush=True)
+    answer = "Сейчас воздухан в запое. Отъебись."
 
     return jsonify({
         "fulfillmentText": answer[:3900]
